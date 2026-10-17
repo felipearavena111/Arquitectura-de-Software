@@ -1,0 +1,8 @@
+# Entornos y librerías
+venv/
+node_modules/
+__pycache__/
+
+# Archivos de entorno y SO
+.env
+.DS_Store
