@@ -38,7 +38,10 @@ Abre una terminal, ubícate en la raíz del proyecto y ejecuta los siguientes co
 5. Aplica las migraciones para crear las tablas en PostgreSQL:
     python manage.py migrate
 
-6. Levanta el servidor:
+6. Carga los usuarios y roles de prueba en la base de datos:
+   python manage.py loaddata usuarios_prueba.json
+   
+7. Levanta el servidor:
     python manage.py runserver
 
 ### Paso 3: Frontend (React / Vite)

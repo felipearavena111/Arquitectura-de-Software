@@ -172,3 +172,14 @@ input:focus {
   border: 1px solid #ef4444;
   color: #fca5a5;
 }
+
+/* Nuevas clases para App.css */
+.dashboard-wide { max-width: 850px; }
+.layout-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start; }
+.historial-box { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 1rem; max-height: 280px; overflow-y: auto; }
+.historial-item { padding: 0.6rem 0; border-bottom: 1px solid #334155; font-size: 0.85rem; color: #cbd5e1; display: flex; justify-content: space-between;}
+.historial-item:last-child { border-bottom: none; }
+.table-container { width: 100%; overflow-x: auto; margin-top: 1rem; }
+table { width: 100%; border-collapse: collapse; color: #f8fafc; font-size: 0.9rem; }
+th, td { padding: 0.8rem; text-align: left; border-bottom: 1px solid #334155; }
+th { color: #38bdf8; font-weight: 600; background: #0f172a; }
