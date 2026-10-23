@@ -69,6 +69,6 @@ Una vez que ambos servidores estén corriendo:
    - **Usuario:** operario
    - **Contraseña:** operario
 
-4. Ingresa datos de temperatura y humedad en el panel de control y guárdalos. Nota: Si la temperatura es menor o igual a 0, se activará automáticamente la lógica de alerta por helada.
+3. Ingresa datos de temperatura y humedad en el panel de control y guárdalos. Nota: Si la temperatura es menor o igual a 0, se activará automáticamente la lógica de alerta por helada.
 
-5. Para verificar que los datos cruzaron la API y se guardaron físicamente en la base de datos, revisa el panel de administrador del Backend en: http://127.0.0.1:8000/admin/nodo_edge/registrotelemetria/
+4. Para verificar que los datos cruzaron la API y se guardaron físicamente en la base de datos, revisa el panel de administrador del Backend en: http://127.0.0.1:8000/admin/nodo_edge/registrotelemetria/
