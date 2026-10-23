@@ -64,8 +64,13 @@ Una vez que ambos servidores estén corriendo:
 1. Ve a tu navegador y abre el Frontend: http://localhost:5173/
 
 2. Inicia sesión con las credenciales de prueba:
+   - **ROL OPERARIO**
    - **Usuario:** admin
    - **Contraseña:** admin
+  
+   - **ROL AGRONOMO**
+   - **Usuario:** operario
+   - **Contraseña:** operario
 
 3. Ingresa datos de temperatura y humedad en el panel de control y guárdalos. Nota: Si la temperatura es menor o igual a 0, se activará automáticamente la lógica de alerta por helada.
 
