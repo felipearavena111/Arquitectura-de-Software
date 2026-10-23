@@ -69,8 +69,8 @@ Una vez que ambos servidores estén corriendo:
    - **Contraseña:** admin
   
    - **ROL AGRONOMO**
-   - **Usuario:** operario
-   - **Contraseña:** operario
+   - **Usuario:** agronomo
+   - **Contraseña:** agronomo
 
 3. Ingresa datos de temperatura y humedad en el panel de control y guárdalos. Nota: Si la temperatura es menor o igual a 0, se activará automáticamente la lógica de alerta por helada.
 
