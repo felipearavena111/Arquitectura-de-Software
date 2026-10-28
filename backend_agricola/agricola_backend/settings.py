@@ -138,6 +138,6 @@ MAILERS = {
 CORS_ALLOW_ALL_ORIGINS = True
 
 INFLUXDB_URL = os.getenv('INFLUXDB_URL', 'http://localhost:8181')
-INFLUXDB_TOKEN = os.getenv('INFLUXDB_TOKEN', '')
+INFLUXDB_TOKEN = os.getenv('INFLUXDB_TOKEN', 'TOKENMUYSECRETOXD')
 INFLUXDB_ORG = os.getenv('INFLUXDB_ORG', 'mi_organizacion_agricola')
 INFLUXDB_BUCKET = os.getenv('INFLUXDB_BUCKET', 'telemetria_sensores')
