@@ -6,18 +6,14 @@ function OperarioView({ usuario, setUsuarioActivo }) {
   const [humedad, setHumedad] = useState('')
   const [mensajeForm, setMensajeForm] = useState('')
   const [filtro, setFiltro] = useState('todo')
-  
-  // Estados para edición
-  const [editandoId, setEditandoId] = useState(null)
-  const [editTemp, setEditTemp] = useState('')
-  const [editHum, setEditHum] = useState('')
 
   const cargarDatos = async () => {
     try {
       const response = await fetch('http://127.0.0.1:8000/api/telemetria/')
       if (response.ok) {
         const data = await response.json()
-        setTelemetria(data)
+        // Aseguramos guardar siempre la lista de datos
+        setTelemetria(data.telemetria || data || [])
       }
     } catch (error) {
       console.error("Error cargando telemetría", error)
@@ -40,7 +36,7 @@ function OperarioView({ usuario, setUsuarioActivo }) {
         body: JSON.stringify({ temperatura, humedad })
       })
       if (response.ok) {
-        setMensajeForm(`Dato registrado. ${temperatura <= 0 ? '¡ALERTA DE HELADA!' : ''}`)
+        setMensajeForm(`Dato registrado. ${parseFloat(temperatura) <= 0 ? '¡ALERTA DE HELADA!' : ''}`)
         setTemperatura('')
         setHumedad('')
         cargarDatos() // Recargar tabla
@@ -50,37 +46,23 @@ function OperarioView({ usuario, setUsuarioActivo }) {
     }
   }
 
-  const handleActualizarDato = async (id) => {
-    try {
-      const response = await fetch(`http://127.0.0.1:8000/api/telemetria/${id}/`, {
-        method: 'PUT', // O PATCH dependiendo de tu configuración en Django
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ temperatura: editTemp, humedad: editHum })
-      })
-      if (response.ok) {
-        setEditandoId(null)
-        cargarDatos()
-      }
-    } catch (error) {
-      console.error("Error actualizando", error)
-    }
-  }
-
-  const datosFiltrados = telemetria.filter(item => {
+  // Filtro protegido para evitar el error de pantalla negra
+  const datosFiltrados = (Array.isArray(telemetria) ? telemetria : []).filter(item => {
     if (filtro === 'todo') return true
-    const fechaDato = new Date(item.fecha || item.created_at) // Ajusta el nombre del campo fecha según tu BD
+    const fechaDato = new Date(item.tiempo) // Adaptado para InfluxDB
     const diffDias = (new Date() - fechaDato) / (1000 * 3600 * 24)
     if (filtro === 'hoy') return diffDias < 1
     if (filtro === 'semana') return diffDias <= 7
     if (filtro === 'mes') return diffDias <= 30
     return true
   })
+
   const formatearFecha = (fechaString) => {
-  if (!fechaString) return 'Sin fecha';
-  return new Date(fechaString).toLocaleString('es-CL', {
-    day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
-  });
-};
+    if (!fechaString) return 'Sin fecha';
+    return new Date(fechaString).toLocaleString('es-CL', {
+      day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+    });
+  };
 
   return (
     <div className="layout-center">
@@ -122,23 +104,26 @@ function OperarioView({ usuario, setUsuarioActivo }) {
             </div>
             
             <div className="historial-box" style={{maxHeight: '400px'}}>
-              {datosFiltrados.map((dato) => (
-                <div key={dato.id} className="historial-item" style={{flexDirection: 'column', gap: '0.5rem'}}><span style={{fontSize: '0.75rem', color: '#94a3b8'}}>📅 {formatearFecha(dato.fecha)}</span>
-                  {editandoId === dato.id ? (
-                    <div style={{display: 'flex', gap: '0.5rem'}}>
-                      <input type="number" step="0.1" value={editTemp} onChange={(e)=>setEditTemp(e.target.value)} style={{width: '70px'}}/>
-                      <input type="number" step="0.1" value={editHum} onChange={(e)=>setEditHum(e.target.value)} style={{width: '70px'}}/>
-                      <button onClick={() => handleActualizarDato(dato.id)} className="btn-save" style={{padding: '0.3rem', borderRadius: '4px'}}>✔</button>
-                      <button onClick={() => setEditandoId(null)} style={{padding: '0.3rem', borderRadius: '4px'}}>✖</button>
-                    </div>
-                  ) : (
-                    <div style={{display: 'flex', justifyContent: 'space-between'}}>
-                      <span>🌡️ {dato.temperatura}°C | 💧 {dato.humedad}%</span>
-                      <button onClick={() => { setEditandoId(dato.id); setEditTemp(dato.temperatura); setEditHum(dato.humedad); }} style={{background: 'transparent', border: '1px solid #38bdf8', color: '#38bdf8', borderRadius: '4px', cursor: 'pointer'}}>Editar</button>
-                    </div>
-                  )}
+              {datosFiltrados.map((dato, index) => (
+                <div key={index} className="historial-item" style={{flexDirection: 'column', gap: '0.5rem'}}>
+                  <span style={{fontSize: '0.75rem', color: '#94a3b8'}}>
+                    📅 {formatearFecha(dato.tiempo)} | Nodo: {dato.nodo || 'nodo_01'}
+                  </span>
+                  
+                  <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                     <span>
+                       {dato.sensor === 'temperatura' ? '🌡️ ' : '💧 '} 
+                       {dato.sensor ? dato.sensor.charAt(0).toUpperCase() + dato.sensor.slice(1) : 'Sensor'}: {dato.valor}{dato.unidad}
+                     </span>
+                     <button 
+                        onClick={() => alert('La edición directa no está permitida en bases de datos de series de tiempo (InfluxDB).')} 
+                        style={{background: 'transparent', border: '1px solid #38bdf8', color: '#38bdf8', borderRadius: '4px', cursor: 'pointer', padding: '0.2rem 0.5rem'}}>
+                        Editar
+                      </button>
+                  </div>
                 </div>
               ))}
+              {datosFiltrados.length === 0 && <p style={{color: '#94a3b8', textAlign: 'center'}}>No hay datos registrados aún.</p>}
             </div>
           </section>
         </div>

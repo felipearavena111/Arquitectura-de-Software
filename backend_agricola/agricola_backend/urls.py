@@ -4,9 +4,11 @@ from nodo_edge import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # Ruta de autenticación restaurada
+    
+    # Ruta de autenticación (PostgreSQL)
     path('api/login/', views.login_api, name='login_api'),
-    # Rutas de telemetría
-    path('api/telemetria/', views.telemetria_list, name='telemetria_list'),
-    path('api/telemetria/<int:pk>/', views.telemetria_detail, name='telemetria_detail'),
+    
+    # Rutas de telemetría (InfluxDB)
+    path('api/telemetria/', views.RecepcionTelemetriaView.as_view(), name='registrar_telemetria'),
+    path('api/telemetria/nodo/<str:nodo_id>/', views.ConsultaTelemetriaView.as_view(), name='consultar_telemetria'),
 ]
