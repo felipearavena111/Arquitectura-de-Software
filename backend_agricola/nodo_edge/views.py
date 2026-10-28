@@ -2,10 +2,13 @@ from django.contrib.auth import authenticate
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .models import RegistroTelemetria, PerfilUsuario
-from .serializers import RegistroTelemetriaSerializer
+from rest_framework.views import APIView
 
-# 1. FUNCIÓN DE LOGIN RECUPERADA
+from .models import PerfilUsuario
+from .influx_client import TelemetryInfluxClient
+
+
+# 1. AUTENTICACIÓN (PostgreSQL)
 @api_view(['POST'])
 def login_api(request):
     username = request.data.get('username')
@@ -27,31 +30,39 @@ def login_api(request):
     else:
         return Response({'error': 'Credenciales inválidas'}, status=status.HTTP_401_UNAUTHORIZED)
 
-# 2. FUNCIONES DE TELEMETRÍA
-@api_view(['GET', 'POST'])
-def telemetria_list(request):
-    if request.method == 'GET':
-        datos = RegistroTelemetria.objects.all().order_by('-fecha')
-        serializer = RegistroTelemetriaSerializer(datos, many=True)
-        return Response(serializer.data)
-    
-    elif request.method == 'POST':
-        serializer = RegistroTelemetriaSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['PUT'])
-def telemetria_detail(request, pk):
-    try:
-        dato = RegistroTelemetria.objects.get(pk=pk)
-    except RegistroTelemetria.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+# 2. VISTAS DE TELEMETRÍA (InfluxDB)
+class RecepcionTelemetriaView(APIView):
+    def post(self, request):
+        nodo_id = request.data.get("nodo_id") or request.data.get("nodo")
+        tipo_sensor = request.data.get("tipo_sensor", "sensor_general")
+        valor = request.data.get("valor")
+        unidad = request.data.get("unidad", "")
 
-    if request.method == 'PUT':
-        serializer = RegistroTelemetriaSerializer(dato, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if nodo_id is None or valor is None:
+            return Response(
+                {"error": "Faltan parámetros requeridos: nodo_id o valor."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        influx = TelemetryInfluxClient()
+        try:
+            influx.guardar_telemetria(nodo_id, tipo_sensor, valor, unidad)
+            return Response({"status": "Telemetría guardada en InfluxDB"}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        finally:
+            influx.cerrar()
+
+
+class ConsultaTelemetriaView(APIView):
+    def get(self, request, nodo_id):
+        rango = request.query_params.get("rango", "-24h")
+        influx = TelemetryInfluxClient()
+        try:
+            datos = influx.obtener_telemetria_reciente(nodo_id, rango_tiempo=rango)
+            return Response({"nodo_id": nodo_id, "telemetria": datos})
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        finally:
+            influx.cerrar()

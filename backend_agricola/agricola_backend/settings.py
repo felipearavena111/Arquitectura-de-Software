@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -135,3 +136,8 @@ MAILERS = {
 }
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+INFLUXDB_URL = os.getenv('INFLUXDB_URL', 'http://localhost:8181')
+INFLUXDB_TOKEN = os.getenv('INFLUXDB_TOKEN', '')
+INFLUXDB_ORG = os.getenv('INFLUXDB_ORG', 'mi_organizacion_agricola')
+INFLUXDB_BUCKET = os.getenv('INFLUXDB_BUCKET', 'telemetria_sensores')
