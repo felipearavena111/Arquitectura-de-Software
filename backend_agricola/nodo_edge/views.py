@@ -1,21 +1,27 @@
 from django.contrib.auth import authenticate
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken  
 
 from .models import PerfilUsuario
 from .influx_client import TelemetryInfluxClient
 
 
-# 1. AUTENTICACIÓN (PostgreSQL)
+# 1. AUTENTICACIÓN CON JWT (PostgreSQL)
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def login_api(request):
     username = request.data.get('username')
     password = request.data.get('password')
     user = authenticate(username=username, password=password)
     
     if user is not None:
+        # Generación de tokens JWT para el usuario autenticado
+        refresh = RefreshToken.for_user(user)
+        
         es_jefe = False
         try:
             perfil = PerfilUsuario.objects.get(user=user)
@@ -25,15 +31,16 @@ def login_api(request):
             
         return Response({
             'username': user.username,
-            'es_jefe': es_jefe
-        })
+            'es_jefe': es_jefe,
+            'access': str(refresh.access_token),  # Token de acceso (8 horas)
+            'refresh': str(refresh)              # Token de refresco (1 día)
+        }, status=status.HTTP_200_OK)
     else:
         return Response({'error': 'Credenciales inválidas'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 # 2. VISTAS DE TELEMETRÍA (InfluxDB)
 class RecepcionTelemetriaView(APIView):
-    # A) GET global para cargar el "Historial Global" en el frontend (Soluciona 405)
     def get(self, request):
         rango = request.query_params.get("rango", "-24h")
         nodo_id = request.query_params.get("nodo_id", "nodo_01")
@@ -46,12 +53,8 @@ class RecepcionTelemetriaView(APIView):
         finally:
             influx.cerrar()
 
-    # B) POST adaptable para guardar registros (Soluciona 400)
     def post(self, request):
-        # Asigna 'nodo_01' por defecto si el frontend no envía nodo_id
         nodo_id = request.data.get("nodo_id") or request.data.get("nodo") or "nodo_01"
-        
-        # Lee si el formulario envió temperatura y/o humedad directamente
         temperatura = request.data.get("temperatura")
         humedad = request.data.get("humedad")
 
@@ -59,7 +62,6 @@ class RecepcionTelemetriaView(APIView):
         try:
             registros_procesados = 0
 
-            # Permite procesar el formulario si envía ambos campos a la vez
             if temperatura is not None and temperatura != "":
                 influx.guardar_telemetria(nodo_id, "temperatura", float(temperatura), "°C")
                 registros_procesados += 1
@@ -68,7 +70,6 @@ class RecepcionTelemetriaView(APIView):
                 influx.guardar_telemetria(nodo_id, "humedad", float(humedad), "%")
                 registros_procesados += 1
 
-            # Si no venían campos de formulario compuesto, evalúa la estructura estándar (tipo_sensor + valor)
             if registros_procesados == 0:
                 tipo_sensor = request.data.get("tipo_sensor", "sensor_general")
                 valor = request.data.get("valor")
@@ -100,3 +101,8 @@ class ConsultaTelemetriaView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         finally:
             influx.cerrar()
+            
+            
+            
+            
+            
