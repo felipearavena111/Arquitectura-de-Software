@@ -8,14 +8,20 @@ function AgronomoView({ usuario, setUsuarioActivo }) {
   useEffect(() => {
     const fetchDatos = async () => {
       try {
-        const response = await fetch('http://127.0.0.1:8000/api/telemetria/')
+        // INTEGRADO: Token JWT enviado en los headers de la petición
+        const token = localStorage.getItem('jwt_access')
+        const response = await fetch('http://127.0.0.1:8000/api/telemetria/', {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+        })
         if (response.ok) {
           const data = await response.json()
-          // Asegura guardar la lista de la llave "telemetria" o el array directo
           setTelemetriaGeneral(data.telemetria || data || [])
         }
       } catch (error) {
-        console.error("Error cargando telemetría", error)
+        console.error('Error cargando telemetría', error)
       } finally {
         setCargando(false)
       }
@@ -23,10 +29,9 @@ function AgronomoView({ usuario, setUsuarioActivo }) {
     fetchDatos()
   }, [])
 
-  // Protegemos el filtro para que no falle si la variable no es un array
   const datosFiltrados = (Array.isArray(telemetriaGeneral) ? telemetriaGeneral : []).filter(item => {
     if (filtro === 'todo') return true
-    const fechaDato = new Date(item.tiempo) // Cambiado a item.tiempo para InfluxDB
+    const fechaDato = new Date(item.tiempo)
     const diffDias = (new Date() - fechaDato) / (1000 * 3600 * 24)
     if (filtro === 'hoy') return diffDias < 1
     if (filtro === 'semana') return diffDias <= 7
@@ -35,11 +40,11 @@ function AgronomoView({ usuario, setUsuarioActivo }) {
   })
 
   const formatearFecha = (fechaString) => {
-    if (!fechaString) return 'Sin fecha';
+    if (!fechaString) return 'Sin fecha'
     return new Date(fechaString).toLocaleString('es-CL', {
       day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
-    });
-  };
+    })
+  }
 
   return (
     <div className="layout-center">
@@ -49,7 +54,17 @@ function AgronomoView({ usuario, setUsuarioActivo }) {
             <h2 className="app-title">Visor de Telemetría</h2>
             <p className="app-subtitle">Bienvenido, <strong>{usuario.username}</strong> (Agrónomo)</p>
           </div>
-          <button onClick={() => setUsuarioActivo(null)} className="btn-logout">Cerrar Sesión</button>
+          <button 
+            onClick={() => {
+              // INTEGRADO: Limpiar almacenamiento JWT al cerrar sesión
+              localStorage.removeItem('jwt_access')
+              localStorage.removeItem('jwt_refresh')
+              setUsuarioActivo(null)
+            }} 
+            className="btn-logout"
+          >
+            Cerrar Sesión
+          </button>
         </header>
 
         <section>
@@ -85,7 +100,6 @@ function AgronomoView({ usuario, setUsuarioActivo }) {
                       <td>{dato.sensor ? dato.sensor.charAt(0).toUpperCase() + dato.sensor.slice(1) : 'Sensor'}</td>
                       <td>{dato.valor} {dato.unidad}</td>
                       <td>
-                        {/* Evaluación dinámica de alerta solo para temperatura */}
                         {dato.sensor === 'temperatura' && parseFloat(dato.valor) <= 0 
                           ? <span style={{color: '#f87171', fontWeight: 'bold'}}>Helada Detectada</span> 
                           : <span style={{color: '#6ee7b7'}}>Normal</span>}
