@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { apiFetch, cerrarSesion } from '../api'
 
 function AgronomoView({ usuario, setUsuarioActivo }) {
   const [telemetriaGeneral, setTelemetriaGeneral] = useState([])
@@ -8,14 +9,7 @@ function AgronomoView({ usuario, setUsuarioActivo }) {
   useEffect(() => {
     const fetchDatos = async () => {
       try {
-        // INTEGRADO: Token JWT enviado en los headers de la petición
-        const token = localStorage.getItem('jwt_access')
-        const response = await fetch('http://127.0.0.1:8000/api/telemetria/', {
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token && { Authorization: `Bearer ${token}` }),
-          },
-        })
+        const response = await apiFetch('/telemetria/')
         if (response.ok) {
           const data = await response.json()
           setTelemetriaGeneral(data.telemetria || data || [])
@@ -56,9 +50,7 @@ function AgronomoView({ usuario, setUsuarioActivo }) {
           </div>
           <button 
             onClick={() => {
-              // INTEGRADO: Limpiar almacenamiento JWT al cerrar sesión
-              localStorage.removeItem('jwt_access')
-              localStorage.removeItem('jwt_refresh')
+              cerrarSesion()
               setUsuarioActivo(null)
             }} 
             className="btn-logout"

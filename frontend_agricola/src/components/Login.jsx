@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { guardarSesion } from "../api";
 
 function Login({ setUsuarioActivo }) {
   const [username, setUsername] = useState("");
@@ -19,10 +20,7 @@ function Login({ setUsuarioActivo }) {
 
       if (response.ok) {
         // Guardar token JWT en el almacenamiento local del navegador
-        if (data.access) {
-          localStorage.setItem("jwt_access", data.access);
-          localStorage.setItem("jwt_refresh", data.refresh);
-        }
+        guardarSesion(data);
 
         // INTEGRADO: data ya contiene { username, es_jefe }
         setUsuarioActivo(data.usuario || data);

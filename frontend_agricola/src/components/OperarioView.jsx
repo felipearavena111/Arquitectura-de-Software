@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { apiFetch, cerrarSesion } from "../api";
 
 function OperarioView({ usuario, setUsuarioActivo }) {
   const [telemetria, setTelemetria] = useState([]);
@@ -9,14 +10,7 @@ function OperarioView({ usuario, setUsuarioActivo }) {
 
   const cargarDatos = async () => {
     try {
-      // INTEGRADO: Incluir token JWT en los headers de la petición GET
-      const token = localStorage.getItem("jwt_access");
-      const response = await fetch("http://127.0.0.1:8000/api/telemetria/", {
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-      });
+      const response = await apiFetch("/telemetria/");
       if (response.ok) {
         const data = await response.json();
         setTelemetria(data.telemetria || data || []);
@@ -37,14 +31,8 @@ function OperarioView({ usuario, setUsuarioActivo }) {
       return setMensajeForm("Completa ambos campos.");
 
     try {
-      // INTEGRADO: Incluir token JWT en los headers de la petición POST
-      const token = localStorage.getItem("jwt_access");
-      const response = await fetch("http://127.0.0.1:8000/api/telemetria/", {
+      const response = await apiFetch("/telemetria/", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
         body: JSON.stringify({ temperatura, humedad }),
       });
       if (response.ok) {
@@ -54,6 +42,10 @@ function OperarioView({ usuario, setUsuarioActivo }) {
         setTemperatura("");
         setHumedad("");
         cargarDatos();
+      } else if (response.status === 403) {
+        setMensajeForm("No tienes permisos para registrar datos.");
+      } else if (response.status !== 401) {
+        setMensajeForm("No se pudo registrar el dato.");
       }
     } catch (error) {
       setMensajeForm("Error de conexión.");
@@ -94,9 +86,7 @@ function OperarioView({ usuario, setUsuarioActivo }) {
           </div>
           <button
             onClick={() => {
-              // INTEGRADO: Limpiar almacenamiento JWT al cerrar sesión
-              localStorage.removeItem("jwt_access");
-              localStorage.removeItem("jwt_refresh");
+              cerrarSesion();
               setUsuarioActivo(null);
             }}
             className="btn-logout"

@@ -1,17 +1,19 @@
 from django.contrib.auth import authenticate
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken  
 
 from .models import PerfilUsuario
+from .permissions import EsOperario
 from .influx_client import TelemetryInfluxClient
 
 
 # 1. AUTENTICACIÓN CON JWT (PostgreSQL)
 @api_view(['POST'])
+@authentication_classes([])   # el login no depende de un token previo (ni de uno vencido)
 @permission_classes([AllowAny])
 def login_api(request):
     username = request.data.get('username')
@@ -41,6 +43,13 @@ def login_api(request):
 
 # 2. VISTAS DE TELEMETRÍA (InfluxDB)
 class RecepcionTelemetriaView(APIView):
+    # GET: cualquier usuario autenticado (Operario y Agrónomo).
+    # POST: solo Operario (el Agrónomo es de solo lectura).
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsAuthenticated(), EsOperario()]
+        return [IsAuthenticated()]
+
     def get(self, request):
         rango = request.query_params.get("rango", "-24h")
         nodo_id = request.query_params.get("nodo_id", "nodo_01")
@@ -91,6 +100,8 @@ class RecepcionTelemetriaView(APIView):
 
 
 class ConsultaTelemetriaView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request, nodo_id):
         rango = request.query_params.get("rango", "-24h")
         influx = TelemetryInfluxClient()
@@ -101,8 +112,3 @@ class ConsultaTelemetriaView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         finally:
             influx.cerrar()
-            
-            
-            
-            
-            

@@ -6,12 +6,16 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-v3)zi^q*uoc))@@@(c&mjz!s1h45e2y1r05f)31-v2@o9-v=6m'
+# En producción define DJANGO_SECRET_KEY como variable de entorno.
+SECRET_KEY = os.getenv(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-v3)zi^q*uoc))@@@(c&mjz!s1h45e2y1r05f)31-v2@o9-v=6m',  # solo desarrollo
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 # Application definition
 INSTALLED_APPS = [
@@ -74,10 +78,15 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    # Por defecto TODO endpoint exige un JWT válido. Los públicos (login)
+    # lo declaran explícitamente con AllowAny.
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=8),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': False,
@@ -103,7 +112,10 @@ MAILERS = {
     },
 }
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+]
 
 INFLUXDB_URL = os.getenv('INFLUXDB_URL', 'http://localhost:8181')
 INFLUXDB_TOKEN = os.getenv('INFLUXDB_TOKEN', 'TOKENMUYSECRETOXD')
