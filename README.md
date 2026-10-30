@@ -14,7 +14,15 @@ Plataforma de mitigación de heladas con arquitectura en capas, autenticación J
 ## Instrucciones de Ejecución Local
 
 ### Paso 1: InfluxDB 3.x
-Abre una terminal donde tengas el ejecutable de InfluxDB 3 y ejecuta:
+Descargar influxdb 3 core desde: https://docs.influxdata.com/influxdb3/core/install/
+
+Bajar hasta donde diga "Download and install the latest build artifacts"
+
+Instalar "Windows (AMD64, x86_64) binary" 
+
+Extraer y abrir la carpeta influxdb3-core-3.12.0-windows_amd64
+
+Abre una terminal desde esa carpeta, donde tengas el ejecutable de InfluxDB 3 y ejecuta:
 
 .\influxdb3 serve --node-id PC-node --without-auth
 
