@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { guardarSesion } from "../api";
+import { API_URL, guardarSesion } from "../api";
 
 function Login({ setUsuarioActivo }) {
   const [username, setUsername] = useState("");
@@ -11,7 +11,7 @@ function Login({ setUsuarioActivo }) {
     setErrorLogin("");
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/login/", {
+      const response = await fetch(`${API_URL}/login/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),

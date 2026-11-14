@@ -1,0 +1,73 @@
+services:
+  # 1. Base de Datos Relacional (PostgreSQL)
+  postgres:
+    image: postgres:16-alpine
+    container_name: iot_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: db_iot_agricola
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d db_iot_agricola"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Motor de Series Temporales (InfluxDB 3 Core)
+  influxdb:
+    image: influxdb:3-core
+    container_name: iot_influxdb
+    restart: unless-stopped
+    command: influxdb3 serve --node-id=cluster-node-1 --object-store=file --data-dir=/var/lib/influxdb3 --without-auth
+    ports:
+      - "8181:8181"
+    volumes:
+      - influxdb_data:/var/lib/influxdb3
+
+  # 3. Backend API (Django REST Framework + SimpleJWT)
+  backend:
+    build: ./backend_agricola
+    container_name: iot_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DJANGO_DEBUG: "True"
+      DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1,172.22.0.221,backend"
+      CORS_ALLOWED_ORIGINS: "http://localhost:5173,http://127.0.0.1:5173,http://172.22.0.221:5173"
+      DB_NAME: db_iot_agricola
+      DB_USER: postgres
+      DB_PASSWORD: admin
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      INFLUXDB_URL: "http://influxdb:8181"
+      INFLUXDB_TOKEN: "TOKENMUYSECRETOXD"
+      INFLUXDB_ORG: "mi_organizacion_agricola"
+      INFLUXDB_BUCKET: "telemetria_sensores"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      influxdb:
+        condition: service_started
+
+  # 4. Frontend SPA (React + Vite)
+  frontend:
+    build: ./frontend_agricola
+    container_name: iot_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      # En tu PC local usa localhost; en el Lab 410 cambia esto a http://172.22.0.221:8000/api
+      VITE_API_URL: "http://localhost:8000/api"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  influxdb_data:
