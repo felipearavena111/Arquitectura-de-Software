@@ -10,6 +10,9 @@ urlpatterns = [
     # Autenticación JWT (PostgreSQL)
     path('api/login/', views.login_api, name='login_api'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    
+    # Control de riego anti-helada (PostgreSQL)
+    path('api/riego/', views.ControlRiegoView.as_view(), name='control_riego'),
 
     # Rutas de telemetría (InfluxDB) - protegidas con JWT
     path('api/telemetria/', views.RecepcionTelemetriaView.as_view(), name='registrar_telemetria'),

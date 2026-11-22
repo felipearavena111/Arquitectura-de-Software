@@ -20,3 +20,14 @@ class RegistroTelemetria(models.Model):
         else:
             self.alerta_helada = False
         super().save(*args, **kwargs)
+
+class ControlRiego(models.Model):
+    encendido = models.BooleanField(default=False)
+    modo = models.CharField(max_length=20, default="MANUAL")  # "AUTOMATICO" o "MANUAL"
+    motivo = models.CharField(max_length=150, default="Sistema en espera")
+    ultima_temperatura = models.FloatField(null=True, blank=True)
+    actualizado_por = models.CharField(max_length=50, default="Sistema")
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Riego {'ENCENDIDO' if self.encendido else 'APAGADO'} ({self.modo})"
