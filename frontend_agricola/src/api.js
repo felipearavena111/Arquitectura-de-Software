@@ -1,18 +1,37 @@
-export const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
+export const API_URL =
+  import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8000/api`;
 
 export function guardarSesion({ access, refresh }) {
-  if (access) localStorage.setItem("jwt_access", access);
-  if (refresh) localStorage.setItem("jwt_refresh", refresh);
+  if (access) sessionStorage.setItem("jwt_access", access);
+  if (refresh) sessionStorage.setItem("jwt_refresh", refresh);
+}
+
+export function guardarUsuario(usuario) {
+  if (usuario) {
+    sessionStorage.setItem("usuario_activo", JSON.stringify(usuario));
+  }
+}
+
+export function obtenerUsuarioGuardado() {
+  try {
+    const raw = sessionStorage.getItem("usuario_activo");
+    const access = sessionStorage.getItem("jwt_access");
+    if (!raw || !access) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
 }
 
 export function cerrarSesion() {
-  localStorage.removeItem("jwt_access");
-  localStorage.removeItem("jwt_refresh");
+  sessionStorage.removeItem("jwt_access");
+  sessionStorage.removeItem("jwt_refresh");
+  sessionStorage.removeItem("usuario_activo");
 }
 
 // Usa el refresh token para obtener un nuevo access token.
 async function refrescarAccess() {
-  const refresh = localStorage.getItem("jwt_refresh");
+  const refresh = sessionStorage.getItem("jwt_refresh");
   if (!refresh) return false;
   try {
     const res = await fetch(`${API_URL}/token/refresh/`, {
@@ -38,7 +57,7 @@ export async function apiFetch(path, options = {}) {
       headers: {
         "Content-Type": "application/json",
         ...options.headers,
-        Authorization: `Bearer ${localStorage.getItem("jwt_access")}`,
+        Authorization: `Bearer ${sessionStorage.getItem("jwt_access")}`,
       },
     });
 

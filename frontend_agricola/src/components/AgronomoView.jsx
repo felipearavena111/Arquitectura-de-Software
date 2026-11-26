@@ -48,6 +48,13 @@ function AgronomoView({ usuario, setUsuarioActivo }) {
   useEffect(() => {
     fetchTelemetria()
     fetchEstadoRiego()
+
+    const intervaloSync = setInterval(() => {
+      fetchTelemetria()
+      fetchEstadoRiego()
+    }, 4000)
+
+    return () => clearInterval(intervaloSync)
   }, [])
 
   const cambiarEstadoRiego = async (nuevoEstado) => {

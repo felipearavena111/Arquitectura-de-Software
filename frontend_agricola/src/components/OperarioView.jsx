@@ -48,6 +48,13 @@ function OperarioView({ usuario, setUsuarioActivo }) {
   useEffect(() => {
     cargarDatos();
     cargarEstadoRiego();
+
+    const intervaloSync = setInterval(() => {
+      cargarDatos();
+      cargarEstadoRiego();
+    }, 4000);
+
+    return () => clearInterval(intervaloSync);
   }, []);
 
   // Paso de caminata aleatoria suave (Random Walk)
